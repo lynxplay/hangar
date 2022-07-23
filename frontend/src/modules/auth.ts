@@ -1,5 +1,4 @@
 import type { UserModule } from "~/types";
-import { useAuth } from "~/composables/useAuth";
 import { routePermLog } from "~/lib/composables/useLog";
 import { useAuthStore } from "~/store/auth";
 import { RouteLocationNormalized, RouteLocationRaw } from "vue-router";
@@ -11,8 +10,10 @@ import { hasPerms, toNamedPermission } from "~/composables/usePerm";
 import { NamedPermission, PermissionType } from "~/types/enums";
 import { handleRequestError } from "~/composables/useErrorHandling";
 import { useI18n } from "vue-i18n";
-import { useSettingsStore } from "~/store/settings";
 import * as domain from "~/composables/useDomain";
+import { useSSRStore } from "~/store/ssr";
+import { useAuth } from "~/composables/useAuth";
+import { useSettingsStore } from "~/store/settings";
 
 export const install: UserModule = async ({ request, response, router, redirect }) => {
   router.beforeEach(async (to, from, next) => {
@@ -20,6 +21,10 @@ export const install: UserModule = async ({ request, response, router, redirect 
     if (to.fullPath.startsWith("/@vite")) {
       // really don't need to do stuff for such meta routes
       return;
+    }
+
+    if (import.meta.env.SSR) {
+      useSSRStore().setRequest(request);
     }
 
     await loadPerms(to);

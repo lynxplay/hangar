@@ -1,5 +1,4 @@
 import type { AxiosError, AxiosRequestConfig } from "axios";
-import type { HangarApiException } from "hangar-api";
 import qs from "qs";
 import Cookies from "universal-cookie";
 import { useAxios } from "~/composables/useAxios";
@@ -8,7 +7,6 @@ import { Ref } from "vue";
 import { authLog, fetchLog } from "~/lib/composables/useLog";
 import { isEmpty } from "lodash-es";
 import { useAuth } from "~/composables/useAuth";
-import { useResponse } from "~/composables/useResReq";
 
 interface StatCookie {
   // TODO use or remove
@@ -61,14 +59,13 @@ function request<T>(url: string, method: AxiosRequestConfig["method"], data: obj
             return reject(error);
           }
           // do we have a refresh token we could use?
-          const result = await useAuth.refreshToken();
-          if (result) {
+          authLog("Auth instance: " + useAuth);
+          const result = await useAuth.requestToken();
+          if (result.token) {
             // retry
             authLog("Retrying request...");
-            if (typeof result === "string") {
-              headers = { ...headers, Authorization: `HangarAuth ${result}` };
-              authLog("using new token");
-            }
+            headers = { ...headers, Authorization: `HangarAuth ${result.token}` };
+            authLog("using new token");
             try {
               const response = await request<T>(url, method, data, headers, true);
               return resolve(response);
@@ -109,90 +106,17 @@ export async function useInternalApi<T = void>(
 }
 
 export async function processAuthStuff<T>(headers: Record<string, string>, authRequired: boolean, handler: (headers: Record<string, string>) => Promise<T>) {
-  if (import.meta.env.SSR) {
-    // forward cookies I guess?
-    let token = useCookies().get("HangarAuth");
-    if (!token) {
-      const header = useResponse()?.getHeader("set-cookie") as string[];
-      if (header && header.join) {
-        token = new Cookies(header.join("; ")).get("HangarAuth");
-        authLog("found token in set-cookie header");
-      }
+  if (authRequired) {
+    const tokenRequestResult = await useAuth.requestToken();
+    if (tokenRequestResult.error) {
+      throw tokenRequestResult.error;
     }
-    if (token) {
-      authLog("forward token from cookie");
 
-      // make sure our token is still valid, else refresh
-      if (!useAuth.validateToken(token)) {
-        authLog("token no longer valid, lets refresh");
-        const result = await useAuth.refreshToken();
-        if (result) {
-          authLog("refreshed");
-          token = result;
-        } else {
-          authLog("could not refresh, invalidate");
-          await useAuth.invalidate();
-          throw {
-            isAxiosError: true,
-            response: {
-              data: {
-                isHangarApiException: true,
-                httpError: {
-                  statusCode: 401,
-                },
-                message: "You must be logged in",
-              } as HangarApiException,
-            },
-          };
-        }
-      }
-
-      headers = { ...headers, Authorization: `HangarAuth ${token}` };
-    } else {
-      authLog("can't forward token, no cookie");
-      if (authRequired) {
-        throw {
-          isAxiosError: true,
-          response: {
-            data: {
-              isHangarApiException: true,
-              httpError: {
-                statusCode: 401,
-              },
-              message: "You must be logged in",
-            } as HangarApiException,
-          },
-        };
-      }
-    }
-  } else {
-    // validate and refresh
-    const token = useCookies().get("HangarAuth");
-    if (!useAuth.validateToken(token)) {
-      authLog("token no longer valid, lets refresh");
-      const result = await useAuth.refreshToken();
-      if (result) {
-        authLog("refreshed");
-      } else {
-        authLog("could not refresh, invalidate");
-        await useAuth.invalidate();
-        if (authRequired) {
-          throw {
-            isAxiosError: true,
-            response: {
-              data: {
-                isHangarApiException: true,
-                httpError: {
-                  statusCode: 401,
-                },
-                message: "You must be logged in",
-              } as HangarApiException,
-            },
-          };
-        }
-      }
+    if (tokenRequestResult.token) {
+      headers = { ...headers, Authorization: `HangarAuth ${tokenRequestResult.token}` };
     }
   }
+
   return handler(headers);
 }
 

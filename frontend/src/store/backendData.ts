@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-import { IPlatform, IProjectCategory, IPrompt, IVisibility, Color, FlagReason } from "hangar-internal";
+import { Color, FlagReason, IPlatform, IProjectCategory, IPrompt, IVisibility } from "hangar-internal";
 import { NamedPermission, Platform, ProjectCategory, Prompt } from "~/types/enums";
 
 import { Announcement as AnnouncementObject, Announcement, IPermission, Role } from "hangar-api";

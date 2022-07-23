@@ -25,6 +25,10 @@ export function exit(d: domain.Domain | null) {
   domainLog("exit");
 }
 
+export function active(): Domain | null {
+  return domainRef.value;
+}
+
 export function set(key: string, value: unknown) {
   if (!import.meta.env.SSR) return;
   if (!domain.active) {

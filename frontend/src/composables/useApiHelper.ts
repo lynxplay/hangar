@@ -55,23 +55,23 @@ export async function useInvites(blocking = true) {
 }
 
 export async function useNotifications(blocking = true) {
-  return useInitialState("useNotifications", () => useInternalApi<PaginatedResult<HangarNotification>>("notifications", false), blocking);
+  return useInitialState("useNotifications", () => useInternalApi<PaginatedResult<HangarNotification>>("notifications", true), blocking);
 }
 
 export async function useUnreadNotifications(blocking = true) {
-  return useInitialState("useUnreadNotifications", () => useInternalApi<PaginatedResult<HangarNotification>>("unreadnotifications", false), blocking);
+  return useInitialState("useUnreadNotifications", () => useInternalApi<PaginatedResult<HangarNotification>>("unreadnotifications", true), blocking);
 }
 
 export async function useReadNotifications(blocking = true) {
-  return useInitialState("useReadNotifications", () => useInternalApi<PaginatedResult<HangarNotification>>("readnotifications", false), blocking);
+  return useInitialState("useReadNotifications", () => useInternalApi<PaginatedResult<HangarNotification>>("readnotifications", true), blocking);
 }
 
 export async function useRecentNotifications(blocking = true, amount: number) {
-  return useInitialState("useRecentNotifications", () => useInternalApi<HangarNotification[]>("recentnotifications?amount=" + amount, false), blocking);
+  return useInitialState("useRecentNotifications", () => useInternalApi<HangarNotification[]>("recentnotifications?amount=" + amount, true), blocking);
 }
 
 export async function useUnreadNotificationsCount(blocking = true) {
-  return useInitialState("useUnreadNotificationsCount", () => useInternalApi<number>("unreadcount", false), blocking);
+  return useInitialState("useUnreadNotificationsCount", () => useInternalApi<number>("unreadcount", true), blocking);
 }
 
 export async function useResolvedFlags(blocking = true) {
@@ -79,7 +79,7 @@ export async function useResolvedFlags(blocking = true) {
 }
 
 export async function useUnresolvedFlags(blocking = true) {
-  return useInitialState("useUnresolvedFlags", () => useInternalApi<PaginatedResult<Flag>>("flags/unresolved", false), blocking);
+  return useInitialState("useUnresolvedFlags", () => useInternalApi<PaginatedResult<Flag>>("flags/unresolved", true), blocking);
 }
 
 export async function useProjectFlags(projectId: number, blocking = true) {

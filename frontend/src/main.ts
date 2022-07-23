@@ -9,11 +9,13 @@ import { installI18n } from "~/lib/i18n";
 import "./styles/main.css";
 import { useBackendDataStore } from "~/store/backendData";
 import devalue from "@nuxt/devalue";
-import { settingsLog } from "~/lib/composables/useLog";
+import { domainLog, settingsLog, ssrLog } from "~/lib/composables/useLog";
 import * as domain from "~/composables/useDomain";
 
 import "regenerator-runtime/runtime"; // popper needs this?
 import { RouterScrollBehavior } from "vue-router";
+import { useSSRContext } from "vue";
+import { useSSRStore } from "~/store/ssr";
 
 const routes = setupLayouts(generatedRoutes);
 // we need to override the path on the error route to have the patch math
@@ -43,15 +45,19 @@ const options: Parameters<typeof viteSSR>["1"] = {
 
 export default viteSSR(App, options, async (ctx) => {
   const { app, initialState, initialRoute, request, response } = ctx;
+  ssrLog("visitingSSR on path:", request?.url);
+  const d = domain.create(request, response);
 
   app.component(ClientOnly.name, ClientOnly);
-
-  const d = domain.create(request, response);
 
   const head = createHead();
   const pinia = createPinia();
   app.use(pinia).use(head);
   domain.set("pinia", pinia);
+
+  if (import.meta.env.SSR) {
+    useSSRStore().setRequest(request);
+  }
 
   // install all modules under `modules/`
   for (const module of Object.values(import.meta.globEager("./modules/*.ts"))) {
